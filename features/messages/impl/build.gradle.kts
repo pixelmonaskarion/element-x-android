@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.vanniktech.blurhash)
     implementation(libs.telephoto.zoomableimage)
     implementation(libs.matrix.emojibase.bindings)
+    implementation(libs.accompanist.permission)
 
     testImplementation(libs.test.junit)
     testImplementation(libs.coroutines.test)

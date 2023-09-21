@@ -16,6 +16,7 @@
 
 package io.element.android.features.messages.impl.messagecomposer
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.compose.runtime.Composable
@@ -29,6 +30,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import im.vector.app.features.analytics.plan.Composer
 import io.element.android.features.messages.impl.attachments.Attachment
 import io.element.android.features.messages.impl.attachments.preview.error.sendAttachmentError
@@ -72,6 +76,7 @@ class MessageComposerPresenter @Inject constructor(
     private val richTextEditorStateFactory: RichTextEditorStateFactory,
 ) : Presenter<MessageComposerState> {
 
+    @OptIn(ExperimentalPermissionsApi::class)
     @SuppressLint("UnsafeOptInUsageError")
     @Composable
     override fun present(): MessageComposerState {
@@ -131,6 +136,9 @@ class MessageComposerPresenter @Inject constructor(
                 else -> Unit
             }
         }
+        val cameraPermissionState = rememberPermissionState(
+            Manifest.permission.CAMERA
+        )
 
         fun handleEvents(event: MessageComposerEvents) {
             when (event) {
@@ -162,12 +170,24 @@ class MessageComposerPresenter @Inject constructor(
                     filesPicker.launch()
                 }
                 MessageComposerEvents.PickAttachmentSource.PhotoFromCamera -> localCoroutineScope.launch {
-                    showAttachmentSourcePicker = false
-                    cameraPhotoPicker.launch()
+                    if (cameraPermissionState.status.isGranted) {
+                        showAttachmentSourcePicker = false
+                        cameraPhotoPicker.launch()
+                    } else {
+                        try {
+                            cameraPermissionState.launchPermissionRequest()
+                        } catch (_: SecurityException) {}
+                    }
                 }
                 MessageComposerEvents.PickAttachmentSource.VideoFromCamera -> localCoroutineScope.launch {
-                    showAttachmentSourcePicker = false
-                    cameraVideoPicker.launch()
+                    if (cameraPermissionState.status.isGranted) {
+                        showAttachmentSourcePicker = false
+                        cameraVideoPicker.launch()
+                    } else {
+                        try {
+                            cameraPermissionState.launchPermissionRequest()
+                        } catch (_: SecurityException) {}
+                    }
                 }
                 MessageComposerEvents.PickAttachmentSource.Location -> {
                     showAttachmentSourcePicker = false
